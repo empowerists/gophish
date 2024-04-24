@@ -29,6 +29,7 @@ time="2020-07-29T01:24:08Z" level=info msg="Please login with the username admin
 ```
 
 Releases of Gophish prior to v0.10.1 have a default username of `admin` and password of `gophish`.
+## NEW FEATURES
 
 ### Documentation
 
