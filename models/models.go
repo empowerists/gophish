@@ -53,6 +53,7 @@ const (
 	EventReported      string = "Email Reported"
 	EventProxyRequest  string = "Proxied request"
 	StatusSuccess      string = "Success"
+	EventCustomEvent   string = "Custom Event"
 	StatusQueued       string = "Queued"
 	StatusSending      string = "Sending"
 	StatusUnknown      string = "Unknown"
