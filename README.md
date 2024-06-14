@@ -1,6 +1,6 @@
 ![gophish logo](https://raw.github.com/gophish/gophish/master/static/images/gophish_purple.png)
 
-Gophish
+GophishLastPlus
 =======
 
 ![Build Status](https://github.com/gophish/gophish/workflows/CI/badge.svg) [![GoDoc](https://godoc.org/github.com/gophish/gophish?status.svg)](https://godoc.org/github.com/gophish/gophish)
