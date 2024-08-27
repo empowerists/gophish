@@ -1,0 +1,17 @@
+services:
+  gophish:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3344:3344"
+      - "8080:8080"
+      - "8443:8443"
+      - "80:80"
+    volumes:
+      - ./gophish.db:/opt/gophish/gophish.db
+      - ./config.json:/opt/gophish/config.json
+      - ./docker/run.sh:/opt/gophish/docker/run.sh
+    environment:
+      - GIN_MODE=release
+    command: ["./docker/run.sh"]
