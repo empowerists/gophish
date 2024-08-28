@@ -102,7 +102,7 @@ var api = {
         },
         // complete() - Completes a campaign at POST /campaigns/:id/complete
         complete: function (id) {
-            return query("/campaigns/" + id + "/complete", "GET", {}, true)
+            return query("/campaigns/" + id + "/complete", "POST", {}, true)
         },
         // updateUsers() - Upates a campaign's user assignments at POST /campaigns/:id/update_users
         updateUsers: function(id) {
