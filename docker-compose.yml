@@ -1,4 +1,24 @@
 services:
+  gophish-proxy:
+    container_name: gophish-proxy
+    image: caddy:latest
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CAP_NET_BIND_SERVICE
+      - CAP_NET_RAW
+    restart: unless-stopped
+    networks:
+      - gophish
+    volumes:
+      - ./caddy:/etc/caddy
+    ports:
+      - "0.0.0.0:80:80"
+      - "0.0.0.0:443:443"
+      - "0.0.0.0:3344:3344"
+
   mariadb:
     container_name: mariadb
     image: mariadb:latest
@@ -25,7 +45,7 @@ services:
 
   gophish:
     container_name: gophish
-    build: .
+    image: ghcr.io/empowerists/gophish:master
     cap_drop:
       - ALL
     cap_add:
@@ -35,7 +55,7 @@ services:
     security_opt:
       - no-new-privileges:true
     ports:
-      - "3344:3344"
+      - "3345:3344"
       - "8080:80"
       - "8443:8443"
     environment:
@@ -46,11 +66,14 @@ services:
     restart: unless-stopped
     networks:
       - db
+      - gophish
     depends_on:
       - mariadb
+      - gophish-proxy
 
 networks:
   db:
+  gophish:
 
 volumes:
   mariadb:
