@@ -1,17 +1,56 @@
 services:
+  mariadb:
+    container_name: mariadb
+    image: mariadb:latest
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CAP_DAC_OVERRIDE
+      - CAP_SETGID
+      - CAP_SETUID
+    restart: always
+    networks:
+      - db
+    volumes:
+      - mariadb:/var/lib/mysql
+    environment:
+      MARIADB_RANDOM_ROOT_PASSWORD: true
+      MARIADB_USER: ${MYSQL_USER}
+      MARIADB_PASSWORD: ${MYSQL_PASSWORD}
+      MARIADB_DATABASE: ${MYSQL_DATABASE}
+    expose:
+      - 3306
+
   gophish:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    container_name: gophish
+    build: .
+    cap_drop:
+      - ALL
+    cap_add:
+      - CAP_DAC_OVERRIDE
+      - CAP_NET_RAW
+      - CAP_NET_BIND_SERVICE
+    security_opt:
+      - no-new-privileges:true
     ports:
       - "3344:3344"
-      - "8080:8080"
+      - "8080:80"
       - "8443:8443"
-      - "80:80"
-    volumes:
-      - ./gophish.db:/opt/gophish/gophish.db
-      - ./config.json:/opt/gophish/config.json
-      - ./docker/run.sh:/opt/gophish/docker/run.sh
     environment:
-      - GIN_MODE=release
-    command: ["./docker/run.sh"]
+      ADMIN_LISTEN_URL: 0.0.0.0:3344
+      ADMIN_USE_TLS: false
+      DB_NAME: mysql
+      DB_FILE_PATH: ${MYSQL_USER}:${MYSQL_PASSWORD}@(mariadb:3306)/${MYSQL_DATABASE}?charset=utf8&parseTime=True&loc=UTC
+    restart: unless-stopped
+    networks:
+      - db
+    depends_on:
+      - mariadb
+
+networks:
+  db:
+
+volumes:
+  mariadb:
