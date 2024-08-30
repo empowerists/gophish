@@ -2,11 +2,17 @@ package models
 
 import (
 	"bytes"
+	"html"
 	"net/mail"
 	"net/url"
 	"path"
+	"regexp"
 	"text/template"
+	"time"
 )
+
+// Regular expression to detect template expressions
+var templateRegex = regexp.MustCompile(`\{{2}[^\}]+\}{2}`)
 
 // TemplateContext is an interface that allows both campaigns and email
 // requests to have a PhishingTemplateContext generated for them.
@@ -24,6 +30,7 @@ type PhishingTemplateContext struct {
 	TrackingURL string
 	RId         string
 	BaseURL     string
+	Now         time.Time
 	BaseRecipient
 }
 
@@ -69,14 +76,24 @@ func NewPhishingTemplateContext(ctx TemplateContext, r BaseRecipient, rid string
 		Tracker:       "<img alt='' style='display: none' src='" + trackingURL.String() + "'/>",
 		From:          fn,
 		RId:           rid,
+		Now:           time.Now(),
 	}, nil
 }
 
 // ExecuteTemplate creates a templated string based on the provided
 // template body and data.
 func ExecuteTemplate(text string, data interface{}) (string, error) {
+	// Unescape template tags that were escaped by CKEditor
+	text = templateRegex.ReplaceAllStringFunc(text, func(match string) string {
+		return html.UnescapeString(match)
+	})
 	buff := bytes.Buffer{}
-	tmpl, err := template.New("template").Parse(text)
+	funcMap := template.FuncMap{
+		"date":     time.Parse,
+		"duration": time.ParseDuration,
+		"location": time.LoadLocation,
+	}
+	tmpl, err := template.New("template").Funcs(funcMap).Parse(text)
 	if err != nil {
 		return buff.String(), err
 	}
