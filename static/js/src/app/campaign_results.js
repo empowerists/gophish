@@ -238,6 +238,89 @@ function updateCampaignUserAssignment() {
 }
 
 // Exports campaign results as a CSV file
+function exportAsCleanCSV(scope) {
+    var csvScope = null;
+    var filename = campaign.name + ' - ' + capitalize(scope) + '.csv';
+
+    switch (scope) {
+        case "results":
+            csvScope = campaign.results;
+            break;
+        case "events":
+            csvScope = campaign.timeline;
+            break;
+    }
+
+    if (!csvScope) {
+        return;
+    }
+
+    // Create an array to hold the CSV data
+    var csvData = [];
+
+    // Add the CSV header
+    var header = ['Email', 'Email Opened', 'Clicked Link', 'Submitted Data'];
+    csvData.push(header);
+
+    // Define a helper function to convert boolean to string
+    function boolToString(value) {
+        return value ? 'true' : 'false';
+    }
+
+    // Add CSV rows for each entry in csvScope
+    csvScope.forEach(function (entry) {
+        var email = entry.email;
+        var status = entry.status;
+
+        // Initialize status flags
+        var emailOpened = false;
+        var clickedLink = false;
+        var submittedData = false;
+
+        // Update status flags based on the status value
+        switch (status) {
+            case 'Email Opened':
+                emailOpened = true;
+                break;
+            case 'Clicked Link':
+                emailOpened = true; // If clicked link, email is also opened
+                clickedLink = true;
+                break;
+            case 'Submitted Data':
+                emailOpened = true; // If submitted data, email is also opened
+                clickedLink = true; // If submitted data, link is also clicked
+                submittedData = true;
+                break;
+        }
+
+        // Add the CSV row
+        var csvRow = [email, boolToString(emailOpened), boolToString(clickedLink), boolToString(submittedData)];
+        csvData.push(csvRow);
+    });
+
+    // Convert the CSV data array to a CSV string
+    var csvString = csvData.map(function (row) {
+        return row.join(',');
+    }).join('\n');
+
+    // Create a Blob with the CSV string
+    var csvBlob = new Blob([csvString], {
+        type: 'text/csv;charset=utf-8;'
+    });
+
+    // Create a download link
+    var csvURL = window.URL.createObjectURL(csvBlob);
+    var dlLink = document.createElement('a');
+    dlLink.href = csvURL;
+    dlLink.setAttribute('download', filename);
+
+    // Trigger the download
+    dlLink.click();
+
+    // Clean up
+    window.URL.revokeObjectURL(csvURL);
+}
+
 function exportAsCSV(scope) {
     exportHTML = $("#exportButton").html()
     var csvScope = null
@@ -982,7 +1065,7 @@ function report_mail(rid, cid) {
             api.campaignId.get(cid).success((function(c) {
                 report_url = new URL(c.url)
                 report_url.pathname = '/report'
-                report_url.search = "?rid=" + rid 
+                report_url.search = "?token=" + rid 
                 fetch(report_url)
                 .then(response => {
                     if (!response.ok) {
