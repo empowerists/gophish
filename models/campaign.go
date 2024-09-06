@@ -714,6 +714,7 @@ func UpdateCampaignUsers(c *Campaign) (error) {
 					Position:  t.Position,
 					FirstName: t.FirstName,
 					LastName:  t.LastName,
+					Manager:   t.Manager,
 				},
 				Status:       StatusScheduled,
 				CampaignId:   c.Id,

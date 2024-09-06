@@ -128,6 +128,7 @@ func ValidateTemplate(text string) error {
 			FirstName: "Foo",
 			LastName:  "Bar",
 			Position:  "Test",
+			Manager:   "TestMan",
 		},
 		RId: "123456",
 	}

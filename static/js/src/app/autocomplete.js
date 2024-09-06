@@ -52,6 +52,11 @@ var TEMPLATE_TAGS = [{
         id: 11,
         name: 'Now.Format "01/02/2006 3:04 PM (MST)"',
         description: 'The current date and time with custom formatting. Accepts a Go date format string as an argument.'
+    },
+    {   
+        id: 12,
+        name: 'Manager',
+        description: 'The recipient\'s manager.'
     }
 ];
 
