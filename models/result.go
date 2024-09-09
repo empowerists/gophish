@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"math/big"
+	"errors"
 	"net"
 	"time"
 
@@ -133,6 +134,22 @@ func (r *Result) HandleFormSubmit(details EventDetails) error {
 	r.Status = EventDataSubmit
 	r.ModifiedDate = event.Time
 	return db.Save(r).Error
+}
+// HandleCustomEvent updates a Result with an custom event (e.g Word document opened, secondary link clicked)
+func (r *Result) HandleCustomEvent(details EventDetails) error {
+
+	EventTitle := details.Payload.Get("title")
+
+	if EventTitle == "" {return errors.New("No title supplied for custom event")
+}
+
+event, err := r.createEvent(EventCustomEvent, details)
+if err != nil {
+	return err
+}
+r.Status = EventTitle
+r.ModifiedDate = event.Time
+return db.Save(r).Error
 }
 
 // HandleEmailReport updates a Result in the case where they report a simulated

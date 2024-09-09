@@ -145,6 +145,7 @@ func (ps *PhishingServer) registerRoutes() {
 	router.HandleFunc("/robots.txt", ps.RobotsHandler)
 	router.HandleFunc("/{path:.*}/track", ps.TrackHandler)
 	router.HandleFunc("/{path:.*}/report", ps.ReportHandler)
+	router.HandleFunc("/event", ps.CustomEventHandler)
 	router.HandleFunc("/report", ps.ReportHandler)
 	router.HandleFunc("/{path:.*}", ps.PhishHandler)
 
@@ -160,7 +161,30 @@ func (ps *PhishingServer) registerRoutes() {
 	phishHandler = handlers.CombinedLoggingHandler(log.Writer(), phishHandler)
 	ps.server.Handler = phishHandler
 }
+// CustomEventHandler deals with Custom events - for example opening Word documents, secondary links, etc
+func (ps *PhishingServer) CustomEventHandler(w http.ResponseWriter, r *http.Request) {
 
+	r, err := setupContext(r)
+	if err != nil {
+		// Log the error if it wasn't something we can safely ignore
+		if err != ErrInvalidRequest && err != ErrCampaignComplete {
+			log.Error(err)
+		}
+		http.NotFound(w, r)
+		return
+	}
+
+	rs := ctx.Get(r, "result").(models.Result)
+	d := ctx.Get(r, "details").(models.EventDetails)
+
+	err = rs.HandleCustomEvent(d)
+	if err != nil {
+		log.Error(err)
+		http.NotFound(w, r)
+	} else {
+		w.WriteHeader(http.StatusNoContent)
+	}
+}
 // TrackHandler tracks emails as they are opened, updating the status for the given Result
 func (ps *PhishingServer) TrackHandler(w http.ResponseWriter, r *http.Request) {
 	r, err := setupContext(r)
