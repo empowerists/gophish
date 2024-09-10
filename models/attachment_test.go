@@ -1,10 +1,9 @@
 package models
 
 import (
-	"bufio"
 	"encoding/base64"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -23,14 +22,14 @@ func (s *ModelsSuite) TestAttachment(c *check.C) {
 			Manager:   "Space Supervisor",
 		},
 		BaseURL:     "http://testurl.com",
-		URL:         "http://testurl.com/?rid=1234567",
-		TrackingURL: "http://testurl.local/track?rid=1234567",
-		Tracker:     "<img alt='' style='display: none' src='http://testurl.local/track?rid=1234567'/>",
-		From:        "From Address",
+		URL:         "http://testurl.com/?token=1234567",
+		TrackingURL: "http://testurl.local/track?token=1234567",
+		Tracker:     "<img alt='' style='display: none' src='http://testurl.local/track?token=1234567'/>",
+		From:        "foo@bar.com",
 		RId:         "1234567",
 	}
 
-	files, err := ioutil.ReadDir("testdata")
+	files, err := os.ReadDir("testdata")
 	if err != nil {
 		log.Fatalf("Failed to open attachment folder 'testdata': %v\n", err)
 	}
@@ -51,13 +50,17 @@ func (s *ModelsSuite) TestAttachment(c *check.C) {
 			c.Assert(a.vanillaFile, check.Equals, strings.Contains(fname, "without-vars"))
 			c.Assert(a.vanillaFile, check.Not(check.Equals), strings.Contains(fname, "with-vars"))
 
-			// Verfify template was applied as expected
-			tt, err := ioutil.ReadAll(t)
+			// Verify template was applied as expected
+			tt, err := io.ReadAll(t)
 			if err != nil {
 				log.Fatalf("Failed to parse templated file '%s': %v\n", fname, err)
 			}
 			templatedFile := base64.StdEncoding.EncodeToString(tt)
 			expectedOutput := readFile("testdata/" + strings.TrimSuffix(ff.Name(), filepath.Ext(ff.Name())) + ".templated" + filepath.Ext(ff.Name())) // e.g text-file-with-vars.templated.txt
+
+			fmt.Printf("Templated File: %s\n", templatedFile)
+			fmt.Printf("Expected Output: %s\n", expectedOutput)
+
 			c.Assert(templatedFile, check.Equals, expectedOutput)
 		}
 	}
@@ -68,16 +71,16 @@ func readFile(fname string) string {
 	if err != nil {
 		log.Fatalf("Failed to open file '%s': %v\n", fname, err)
 	}
-	reader := bufio.NewReader(f)
-	content, err := ioutil.ReadAll(reader)
+	defer f.Close()
+
+	content, err := io.ReadAll(f)
 	if err != nil {
 		log.Fatalf("Failed to read file '%s': %v\n", fname, err)
 	}
-	data := ""
+
 	if filepath.Ext(fname) == ".b64" {
-		data = string(content)
-	} else {
-		data = base64.StdEncoding.EncodeToString(content)
+		return string(content) // Return the raw base64 content
 	}
-	return data
+	// Return base64-encoded content
+	return base64.StdEncoding.EncodeToString(content)
 }

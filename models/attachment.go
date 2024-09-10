@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"encoding/base64"
 	"io"
-	"io/ioutil"
 	"net/url"
 	"path/filepath"
 	"regexp"
@@ -34,8 +33,8 @@ func (a Attachment) Validate() error {
 			Email:     "foo@bar.com",
 			FirstName: "Foo",
 			LastName:  "Bar",
-			Position:  "Test",
-			Manager:   "TestMan",
+			Position:  "Space Janitor",
+			Manager:   "Space Supervisor",
 		},
 		RId: "123456",
 	}
@@ -91,7 +90,7 @@ func (a *Attachment) ApplyTemplate(ptx PhishingTemplateContext) (io.Reader, erro
 				return nil, err
 			}
 			defer ff.Close()
-			contents, err := ioutil.ReadAll(ff)
+			contents, err := io.ReadAll(ff)
 			if err != nil {
 				return nil, err
 			}
@@ -138,7 +137,7 @@ func (a *Attachment) ApplyTemplate(ptx PhishingTemplateContext) (io.Reader, erro
 		return bytes.NewReader(newZipArchive.Bytes()), err
 
 	case ".txt", ".html", ".ics":
-		b, err := ioutil.ReadAll(decodedAttachment)
+		b, err := io.ReadAll(decodedAttachment)
 		if err != nil {
 			return nil, err
 		}
