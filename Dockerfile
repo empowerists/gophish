@@ -14,6 +14,7 @@ FROM golang:1.23 AS build-golang
 
 WORKDIR /go/src/github.com/gophish/gophish
 COPY . .
+RUN export CGO_CFLAGS="-g -O2 -Wno-return-local-addr"
 RUN go get -v && go build -v
 
 
