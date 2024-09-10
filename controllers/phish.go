@@ -86,15 +86,16 @@ func WithContactAddress(addr string) PhishingServerOption {
 // Overwrite net.https Error with a custom one to set our own headers
 // Go's internal Error func returns text/plain so browser's won't render the html
 func customError(w http.ResponseWriter, error string, code int) {
-        w.Header().Set("Server", "Microsoft-IIS/10.0")
-        w.Header().Set("Content-Type", "text/html; charset=utf-8")
-        w.Header().Set("X-Content-Type-Options", "nosniff")
-        w.Header().Set("X-XSS-Protection", "1; mode=block")
-        w.Header().Set("X-Frame-Options", "SAMEORIGIN")
-        w.Header().Set("Content-Security-Policy", "default-src https:")
-        w.WriteHeader(code)
-        fmt.Fprintln(w, error)
+	w.Header().Set("Server", "Microsoft-IIS/10.0")
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	w.Header().Set("X-XSS-Protection", "1; mode=block")
+	w.Header().Set("X-Frame-Options", "SAMEORIGIN")
+	w.Header().Set("Content-Security-Policy", "default-src https:; style-src 'sha256-DUMwXNMzOWh0B7H/n/FxyoXr90eep9O+x+JBlHnKCYo=' ")
+	w.WriteHeader(code)
+	fmt.Fprintln(w, error)
 }
+
 // Overwrite go's internal not found to allow templating the not found page
 // The templating string is currently not passed in, therefore there is no templating yet
 // If I need it in the future, it's a 5 minute change...
@@ -161,6 +162,7 @@ func (ps *PhishingServer) registerRoutes() {
 	phishHandler = handlers.CombinedLoggingHandler(log.Writer(), phishHandler)
 	ps.server.Handler = phishHandler
 }
+
 // CustomEventHandler deals with Custom events - for example opening Word documents, secondary links, etc
 func (ps *PhishingServer) CustomEventHandler(w http.ResponseWriter, r *http.Request) {
 
@@ -170,7 +172,7 @@ func (ps *PhishingServer) CustomEventHandler(w http.ResponseWriter, r *http.Requ
 		if err != ErrInvalidRequest && err != ErrCampaignComplete {
 			log.Error(err)
 		}
-		http.NotFound(w, r)
+		customNotFound(w, r)
 		return
 	}
 
@@ -180,11 +182,12 @@ func (ps *PhishingServer) CustomEventHandler(w http.ResponseWriter, r *http.Requ
 	err = rs.HandleCustomEvent(d)
 	if err != nil {
 		log.Error(err)
-		http.NotFound(w, r)
+		customNotFound(w, r)
 	} else {
 		w.WriteHeader(http.StatusNoContent)
 	}
 }
+
 // TrackHandler tracks emails as they are opened, updating the status for the given Result
 func (ps *PhishingServer) TrackHandler(w http.ResponseWriter, r *http.Request) {
 	r, err := setupContext(r)
