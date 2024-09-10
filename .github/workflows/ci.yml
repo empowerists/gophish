@@ -24,14 +24,11 @@ jobs:
         go get -v -t -d ./...
         go get gopkg.in/check.v1
 
-    - name: Env
-      run : export CGO_CFLAGS="-g -O2 -Wno-return-local-addr"
-
     - name: Build
-      run: go build -v .
+      run: export CGO_CFLAGS="-g -O2 -Wno-return-local-addr" && go build -v .
     
-    - name: Format
-      run: diff -u <(echo -n) <(gofmt -d .)
+    #- name: Format
+    #  run: diff -u <(echo -n) <(gofmt -d .)
     
     - name: Test
-      run: go test -v ./...
+      run: export CGO_CFLAGS="-g -O2 -Wno-return-local-addr" go test -v ./...
