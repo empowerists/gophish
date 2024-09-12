@@ -644,7 +644,7 @@ function renderTimeline(data) {
                             results += '<div class="alert alert-warning mt-1" role="alert">Marked as False Positive!</div>'
                         }
                         else{
-                            results += '<button onclick="false_positive(\'' + record.id + '\',\'' + campaign.timeline[i].id + '\',\'' + campaign.id + '\',\'' + record.reported + '\')" id="false-positive-button" class="btn btn-warning ms-1"><i class="fa fa-ban"></i> False Positive</button></div>'
+                            results += '<button onclick="false_positive(\'' + record.id + '\',\'' + campaign.timeline[i].id + '\',\'' + campaign.id + '\',\'' + record.reported + '\')" id="false-positive-button" class="btn btn-warning ms-1"><i class="fa fa-ban"></i> False Positive</button>'
                         }
                         results += '<div class="timeline-event-details"><i class="fa fa-caret-right"></i> View Details</div>'
                     }
