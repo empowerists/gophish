@@ -69,12 +69,13 @@ type CampaignStats struct {
 	SubmittedData int64 `json:"submitted_data"`
 	EmailReported int64 `json:"email_reported"`
 	Error         int64 `json:"error"`
+	CustomEvent   int64 `json:"custom_event"`
 }
 
 // CampaignGroup is used for a many-to-many relationship between 1..* Campaigns and 1..* Groups
 type CampaignGroup struct {
-	CampaignId  int64 `json:"-"`
-	GroupId int64 `json:"-"`
+	CampaignId int64 `json:"-"`
+	GroupId    int64 `json:"-"`
 }
 
 // Event contains the fields for an event
@@ -300,11 +301,17 @@ func (c *Campaign) generateSendDate(idx int, totalRecipients int) time.Time {
 // It also backfills numbers as appropriate with a running total, so that the values are aggregated.
 func getCampaignStats(cid int64) (CampaignStats, error) {
 	s := CampaignStats{}
+	statuses := []string{EventDataSubmit, EventClicked, Error}
 	query := db.Table("results").Where("campaign_id = ?", cid)
 	err := query.Count(&s.Total).Error
 	if err != nil {
 		return s, err
 	}
+	query.Where("status NOT IN (?)", statuses).Count(&s.CustomEvent)
+	if err != nil {
+		return s, err
+	}
+	s.SubmittedData += s.CustomEvent
 	query.Where("status=?", EventDataSubmit).Count(&s.SubmittedData)
 	if err != nil {
 		return s, err
@@ -317,20 +324,24 @@ func getCampaignStats(cid int64) (CampaignStats, error) {
 	if err != nil {
 		return s, err
 	}
+
 	// Every submitted data event implies they clicked the link
 	s.ClickedLink += s.SubmittedData
+	s.ClickedLink += s.CustomEvent
 	err = query.Where("status=?", EventOpened).Count(&s.OpenedEmail).Error
 	if err != nil {
 		return s, err
 	}
 	// Every clicked link event implies they opened the email
 	s.OpenedEmail += s.ClickedLink
+	//s.OpenedEmail += s.CustomEvent
 	err = query.Where("status=?", EventSent).Count(&s.EmailsSent).Error
 	if err != nil {
 		return s, err
 	}
 	// Every opened email event implies the email was sent
 	s.EmailsSent += s.OpenedEmail
+	//s.EmailsSent += s.CustomEvent
 	err = query.Where("status=?", Error).Count(&s.Error).Error
 	return s, err
 }
@@ -590,10 +601,10 @@ func PostCampaign(c *Campaign, uid int64) error {
 	}
 
 	// Import the users
-	return UpdateCampaignUsers(c);
+	return UpdateCampaignUsers(c)
 }
 
-//DeleteCampaign deletes the specified campaign
+// DeleteCampaign deletes the specified campaign
 func DeleteCampaign(id int64) error {
 	log.WithFields(logrus.Fields{
 		"campaign_id": id,
@@ -658,11 +669,10 @@ func CompleteCampaign(id int64, uid int64) error {
 	return err
 }
 
-
 // InsertGroupIntoCampaign inserts the specified group into the Campaign's group assignments.
 func InsertGroupIntoCampaign(tx *gorm.DB, gid int64, c *Campaign) error {
 	// ToDo: Handle duplicate entries
-	
+
 	err := tx.Save(&CampaignGroup{CampaignId: c.Id, GroupId: gid}).Error
 
 	if err != nil {
@@ -691,12 +701,12 @@ func GetCampaignGroups(cid int64) ([]Group, error) {
 			log.Error(err)
 		}
 	}
-	
-	return gs, nil	
+
+	return gs, nil
 }
 
 // UpdateCampaignUsers creates maillogs and result entries for all group members assigned to the specified campaign
-func UpdateCampaignUsers(c *Campaign) (error) {
+func UpdateCampaignUsers(c *Campaign) error {
 	if len(c.Groups) == 0 {
 		gs, err := GetCampaignGroups(c.Id)
 		if err != nil {
@@ -704,9 +714,9 @@ func UpdateCampaignUsers(c *Campaign) (error) {
 			return err
 		}
 
-		c.Groups = gs	
+		c.Groups = gs
 	}
-	
+
 	totalRecipients := 0
 	for i, _ := range c.Groups {
 		totalRecipients += len(c.Groups[i].Targets)
@@ -714,7 +724,7 @@ func UpdateCampaignUsers(c *Campaign) (error) {
 
 	tx := db.Begin()
 
-	userExists := func(email string) (bool) {
+	userExists := func(email string) bool {
 		err := tx.Table("results").Where("campaign_id = ? AND email = ?", c.Id, email).First(&Result{}).Error
 		if err == gorm.ErrRecordNotFound {
 			return false
