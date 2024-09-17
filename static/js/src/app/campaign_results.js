@@ -1243,9 +1243,8 @@ function report_mail(rid, cid) {
     }).then(function (result) {
         if (result.value){
             api.campaignId.get(cid).success((function(c) {
-                report_url = new URL(c.url)
-                report_url.pathname = '/report'
-                report_url.search = "?token=" + rid 
+                baseUrl = new URL(c.url)
+                report_url = `${baseUrl.origin}/report?token=${rid}`;
                 fetch(report_url)
                 .then(response => {
                     if (!response.ok) {
